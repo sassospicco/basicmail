@@ -22,7 +22,6 @@
 #ifndef USERS_H_
 #define USERS_H_
 
-#define MAX_USRS 100
 #define MAX_FLEN 20
 typedef struct {
 	int id;

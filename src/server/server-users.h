@@ -33,14 +33,16 @@
 int users_len;
 user* users;
 
+#define USERS_SIZE_INIT 50
+
 void load_users() {
 	/*
-	 * Reserves maximum possible space for temporary user table
+	 * Tentatively reserving space for user table
 	 */
-	user* tmp_users;
-	tmp_users = (user*) malloc(MAX_USRS * sizeof(user));
+	int users_size = USERS_SIZE_INIT;
+	users = (user*) malloc(USERS_SIZE_INIT * sizeof(user));
 	
-	if (tmp_users == NULL) {
+	if (users == NULL) {
 		printf("Failed to allocate memory.\n");
 		exit(EXIT_FAILURE);
 	}
@@ -82,21 +84,51 @@ void load_users() {
 				 * Processing the line (if non-empty and not starting with a #)
 				 */
 				if (line[0] != '#' && j > 0) {
-					tmp_users[u].id = u;
+					/*
+					 * Reallocating space if necessary
+					 */
+					if (u >= users_size) {
+						users = (user*) realloc(users, users_size+USERS_SIZE_INIT);
+						users_size += USERS_SIZE_INIT;
+						
+						if (users == NULL) {
+							printf("Failed to allocate memory.\n");
+							exit(EXIT_FAILURE);
+						}
+					}
+					
+					users[u].id = u;
 					
 					char* tab_ptr = strchr(line, '\t');
 					if (tab_ptr != NULL) {
 						int pos = tab_ptr - line;
-						memcpy(tmp_users[u].name, &line, pos);
-						memcpy(tmp_users[u].password, line+pos+1, strlen(line)-pos-1);
-						u++;	
+						int cpylen;
+						
+						if (pos <= MAX_FLEN) {
+							cpylen = pos;
+						} else {
+							cpylen = MAX_FLEN;
+						}
+						memcpy(users[u].name, &line, cpylen);
+						users[u].name[cpylen] = '\0';
+						
+						if (strlen(line)-pos-1 <= MAX_FLEN) {
+							cpylen = strlen(line)-pos-1;
+						} else {
+							cpylen = MAX_FLEN;
+						}
+						memcpy(users[u].password, line+pos+1, cpylen);
+						users[u].password[cpylen] = '\0';
+						u++;
 					}
 				}
 				
 				i++;
 				j = 0;
 			} else {
-				line[j] = buffer[i];
+				if (j < sizeof(line)-1) {
+					line[j] = buffer[i];
+				}
 				i++;
 				j++;
 			}
@@ -104,17 +136,15 @@ void load_users() {
 	} while (out > 0);
 	
 	/*
-	 * Copying temporary table to definitive location
+	 * Resizing users table
 	 */
-	users = malloc(u * sizeof(user));
+	users = (user*) realloc(users, u * sizeof(user));
 	
 	if (users == NULL) {
 		printf("Failed to allocate memory.\n");
 		exit(EXIT_FAILURE);
 	}
-	
-	memcpy(users, tmp_users, u * sizeof(user));
-	free(tmp_users);
+
 	users_len = u;
 }
 

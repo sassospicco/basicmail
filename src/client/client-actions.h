@@ -103,7 +103,7 @@ void perform_send(user* usr, request* req, int sock) {
 		
 		if (body_index >= body_size) {
 			body = (char*) realloc(body, body_size+BODY_SIZE_INIT);
-			body_size = body_size+BODY_SIZE_INIT;
+			body_size += BODY_SIZE_INIT;
 			
 			if (body == NULL) {
 				printf("Failed to allocate memory.\n");
