@@ -1,0 +1,30 @@
+BasicMail 0.1, a simple message exchange suite.
+
+Usage: basicmail <server|client> [OPTIONS]
+
+Options:
+
+	Server:
+		-p,	Listening port, default is 7575
+	
+	Client:
+		-s,	Server IP address, default is 127.0.0.1
+		-h,	Server hostname, e.g. example.com
+		-p, Server port, default is 7575
+		
+		-s and -h parameters are obviously conflicting, last one will take precedence.
+
+Configuration:
+
+	A little bit of configuration is required, but server-side only.
+	Namely, you need to create ~/.basicmail/cfg/users file and populate it with your users' names and passwords.
+	The users file is in tab-separated-values format with only two columns: username and password.
+	Line starting with # are comments.
+	Some limits are enforced: currently each field must be 20 characters long or less and no more than 100 users
+	are supported (parsing will horribly fail otherwise).
+	Please note: a trailing newline is required after last uncommented line.
+
+Copyright (C) 2013, Stefano Tribioli
+BasicMail is free software: you can redistribute it and/or modify it under the terms of the GNU Affero Public License.
+The source of BasicMail (including complete license text) is available at http://github.com/sassospicco/basicmail
+BasicMail is distributed with ABSOLUTELY NO WARRANTY; see LICENSE file for details.
