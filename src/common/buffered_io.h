@@ -174,11 +174,17 @@ int write_str(bfr_ou* bfr, char* from) {
 	return write_array(bfr, from, strlen(from));
 }
 
-int fwrite_str(bfr_ou* bfr, char* from) {
-	int wres = write_array(bfr, from, strlen(from));
+void write_str_c(bfr_ou* bfr, char* from) {
+	write_array(bfr, from, strlen(from));
+	write_char(bfr, 3);
+	flush_buffer(bfr);
+}
+
+void write_str_d(bfr_ou* bfr, char* from) {
+	write_array(bfr, from, strlen(from));
 	write_char(bfr, 4);
 	flush_buffer(bfr);
-	return wres;
+	close(bfr->filedes);
 }
 
 int flush_buffer(bfr_ou* bfr) {
@@ -206,7 +212,13 @@ int pipe_buffers(bfr_in* from, bfr_ou* to) {
 	do {
 		char curr = read_char(from);
 
-		if (from->valid < 0 || curr == 0 || curr == 4) {
+		if (from->valid <= 0) {
+			flush_buffer(to);
+			return from->valid;
+		} else if (curr == 4) {
+			flush_buffer(to);
+			return 0;
+		} else if (curr == 0 || curr == 3) {
 			flush_buffer(to);
 			return counter;
 		} else {

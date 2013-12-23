@@ -111,8 +111,8 @@ void client(struct sockaddr_in* server) {
 				strcpy(req.command, "DELETE");
 				perform_read_or_delete(&usr, &req, sock);
 			}
-		} else if (strcmp(req.command, "quit") == 0) {
-			return;
+		} else if (strcmp(req.command, "quit") == 0 || strcmp(req.command, "exit") == 0) {
+			exit(EXIT_SUCCESS);
 		} else {
 			printf("Unknown command\n");
 		}

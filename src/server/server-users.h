@@ -97,10 +97,10 @@ void load_users() {
 						}
 					}
 					
-					users[u].id = u;
-					
 					char* tab_ptr = strchr(line, '\t');
 					if (tab_ptr != NULL) {
+						users[u].id = u;
+						
 						int pos = tab_ptr - line;
 						int cpylen;
 						

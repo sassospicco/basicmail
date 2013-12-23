@@ -61,8 +61,7 @@ void* handle_connection(void* sock_ptr) {
 	int sock = *((int*) sock_ptr);
 	
 	netin.filedes = netou.filedes = sock;
-	//netin.typedes = netou.typedes = TYPEDES_STREAM;
-	netin.typedes = netou.typedes = TYPEDES_BLOCK;
+	netin.typedes = netou.typedes = TYPEDES_STREAM;
 	
 	/*
 	 * While more bytes are available in input (ie: more requests queued)
@@ -82,7 +81,7 @@ void* handle_connection(void* sock_ptr) {
 		 * Checking header
 		 */
 		if (strcmp(req.version, "basicmail 1") != 0) {
-			fwrite_str(&netou, "Bad request\n\n");
+			write_str_c(&netou, "Bad request\n\n");
 			consume_garbage(&netin);
 			continue;
 		}
@@ -100,9 +99,8 @@ void* handle_connection(void* sock_ptr) {
 		if (i < users_len) {
 			from = users[i];
 		} else {
-			fwrite_str(&netou, "Unknown user.\n");
-			consume_garbage(&netin);
-			continue;
+			write_str_d(&netou, "Unknown user.\n");
+			return NULL;
 		}
 		
 		/*
@@ -125,11 +123,11 @@ void* handle_connection(void* sock_ptr) {
 			sha1_hmac_finish(&ctx, raw);
 			sha1_to_hex(raw, hex);
 			if (strcmp(req.hmac, hex) != 0) {
-				fwrite_str(&netou, "Authentication failed.\n");
+				write_str_d(&netou, "Authentication failed.\n");
 #ifdef DEBUG
 				printf("Expected HMAC: %s\n", hex);
 #endif
-				continue;
+				return NULL;
 			}
 		}
 		
@@ -183,7 +181,7 @@ void* handle_connection(void* sock_ptr) {
 			handling = handle_license(&req, &netou);
 		} else {
 			consume_garbage(&netin);
-			fwrite_str(&netou, "Unknown command.\n");
+			write_str_c(&netou, "Unknown command.\n");
 			continue;
 		}
 		
@@ -204,7 +202,7 @@ void* handle_connection(void* sock_ptr) {
 	close(sock);
 	
 #ifdef DEBUG
-	printf("Client closed connection.\n");
+	printf("Connection closed.\n");
 #endif
 	
 	return &status;
@@ -223,7 +221,7 @@ int handle_send(request* req, bfr_in* netin, bfr_ou* netou, sha1_context* ctx) {
 		}
 	}
 	if (i >= users_len) {
-		fwrite_str(netou, "Unknown recipient.\n");
+		write_str_c(netou, "Unknown recipient.\n");
 		consume_garbage(netin);
 		return -1;
 	}
@@ -254,7 +252,7 @@ int handle_send(request* req, bfr_in* netin, bfr_ou* netou, sha1_context* ctx) {
 	}
 	
 	if (bstore.filedes < 0) {
-		fwrite_str(netou, "Unable to open file.\n");
+		write_str_c(netou, "Unable to open file.\n");
 		return -1;
 	}
 	
@@ -313,7 +311,7 @@ int handle_send(request* req, bfr_in* netin, bfr_ou* netou, sha1_context* ctx) {
 	 * Checking HMAC
 	 */
 	if (sha1_hmac_finish_check(ctx, req->hmac) != 0) {
-		fwrite_str(netou, "Authentication failed.\n");
+		write_str_d(netou, "Authentication failed.\n");
 		close(bstore.filedes);
 		unlink(file);
 		return -1;
@@ -324,7 +322,7 @@ int handle_send(request* req, bfr_in* netin, bfr_ou* netou, sha1_context* ctx) {
 	 */
 	close(bstore.filedes);
 	
-	fwrite_str(netou, "Message sent.\n");
+	write_str_c(netou, "Message sent.\n");
 	
 	return 0;
 }
@@ -343,10 +341,10 @@ int handle_read(request* req, bfr_ou* netou) {
 			if (n == 0) {
 				free(list);
 			}
-			fwrite_str(netou, "Mailbox is empty.\n");
+			write_str_c(netou, "Mailbox is empty.\n");
 			return 0;
 		} else {
-			fwrite_str(netou, "Unable to open directory.\n");
+			write_str_c(netou, "Unable to open directory.\n");
 			return -1;
 		}
 	} else {
@@ -363,7 +361,7 @@ int handle_read(request* req, bfr_ou* netou) {
 			bmsg.typedes = TYPEDES_BLOCK;
 			
 			if (bmsg.filedes < 0) {
-				fwrite_str(netou, "Unable to open file.\n");
+				write_str_c(netou, "Unable to open file.\n");
 				return -1;
 			}
 			
@@ -438,7 +436,7 @@ int handle_read(request* req, bfr_ou* netou) {
 		
 		free(list);
 		
-		write_char(netou, 4);
+		write_char(netou, 3);
 		flush_buffer(netou);
 	}
 	
@@ -461,10 +459,10 @@ int handle_delete(request* req, bfr_ou* netou) {
 			if (n == 0) {
 				free(list);
 			}
-			fwrite_str(netou, "Mailbox is already empty.\n");
+			write_str_c(netou, "Mailbox is already empty.\n");
 			return 0;
 		} else {
-			fwrite_str(netou, "Unable to open directory.\n");
+			write_str_c(netou, "Unable to open directory.\n");
 			return -1;
 		}
 	} else {
@@ -481,16 +479,16 @@ int handle_delete(request* req, bfr_ou* netou) {
 	}
 	
 	if (dresult == 0) {
-		fwrite_str(netou, "Mailbox emptied.\n");
+		write_str_c(netou, "Mailbox emptied.\n");
 		return 0;
 	} else {
-		fwrite_str(netou, "Unknown error.\n");
+		write_str_c(netou, "Unknown error.\n");
 		return -1;
 	}
 }
 
 int handle_license(request* req, bfr_ou* netou) {
-	fwrite_str(netou, "Copyright (C) 2013, Stefano Tribioli\nBasicMail is free software: you can redistribute it and/or modify it under the terms of the GNU Affero Public License.\nThe source of BasicMail (including complete license text) is available at http://github.com/sassospicco/basicmail\n");
+	write_str_c(netou, "Copyright (C) 2013, Stefano Tribioli\nBasicMail is free software: you can redistribute it and/or modify it under the terms of the GNU Affero Public License.\nThe source of BasicMail (including complete license text) is available at [http://github.com/sassospicco/basicmail]\n");
 	return 0;
 }
 

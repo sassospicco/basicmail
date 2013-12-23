@@ -154,9 +154,6 @@ void perform_send(user* usr, request* req, int sock) {
 	netou.filedes = netin.filedes = sock;
 	netou.typedes = netin.typedes = TYPEDES_STREAM;
 	
-	// DEBUG
-	// netou.filedes = open("./cfg/nou", O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP);
-	
 	/*
 	 * Binding buffer to STDOUT
 	 */
@@ -214,10 +211,6 @@ void perform_read_or_delete(user* usr, request* req, int sock) {
 	netou.filedes = netin.filedes = sock;
 	netou.typedes = netin.typedes = TYPEDES_STREAM;
 	
-	// Debug
-	// netou.filedes = open("./cfg/nou", O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP);
-	// netou.typedes = TYPEDES_BLOCK;
-	
 	/*
 	 * Binding buffer to STDOUT
 	 */
@@ -241,7 +234,11 @@ void perform_read_or_delete(user* usr, request* req, int sock) {
 	/*
 	 * Showing server response in STDOUT
 	 */
-	pipe_buffers(&netin, &stdou);
+	int r = pipe_buffers(&netin, &stdou);
+	if (r == 0) {
+		printf("Server closed connection.\n");
+		exit(EXIT_SUCCESS);
+	}
 }
 
 #endif /* CLIENT_ACTIONS_H_ */
