@@ -50,6 +50,10 @@ int handle_delete(request*, bfr_ou*);
 int handle_license(request*, bfr_ou*);
 int filter_dirs(const struct dirent *);
 
+#ifdef DEBUG
+#define SLEEP_TIME 0
+#endif
+
 /*
  * Parent function of working thread.
  * Checking headers and passing control to appropriate action.
@@ -81,7 +85,7 @@ void* handle_connection(void* sock_ptr) {
 		 * Checking header
 		 */
 		if (strcmp(req.version, "basicmail 1") != 0) {
-			write_str_c(&netou, "Bad request\n\n");
+			write_str_c(&netou, "Bad request.\n");
 			consume_garbage(&netin);
 			continue;
 		}
@@ -150,10 +154,10 @@ void* handle_connection(void* sock_ptr) {
 			write_lock();
 #ifdef DEBUG
 			printf("User %s obtaining write lock\n", req.from);
-			sleep(5);
+			sleep(SLEEP_TIME);
 #endif
 			handling = handle_send(&req, &netin, &netou, &ctx);
-#ifdef DEBUG			
+#ifdef DEBUG
 			printf("User %s releasing write lock\n", req.from);
 #endif
 			write_unlock();
@@ -164,10 +168,10 @@ void* handle_connection(void* sock_ptr) {
 			read_lock();
 #ifdef DEBUG
 			printf("User %s obtaining read lock\n", req.from);
-			sleep(5);
+			sleep(SLEEP_TIME);
 #endif
 			handling = handle_read(&req, &netou);
-#ifdef DEBUG			
+#ifdef DEBUG
 			printf("User %s releasing read lock\n", req.from);
 #endif
 			read_unlock();
@@ -178,10 +182,10 @@ void* handle_connection(void* sock_ptr) {
 			write_lock();
 #ifdef DEBUG
 			printf("User %s obtaining write lock\n", req.from);
-			sleep(5);
+			sleep(SLEEP_TIME);
 #endif
 			handling = handle_delete(&req, &netou);
-#ifdef DEBUG			
+#ifdef DEBUG
 			printf("User %s releasing write lock\n", req.from);
 #endif
 			write_unlock();
@@ -283,36 +287,17 @@ int handle_send(request* req, bfr_in* netin, bfr_ou* netou, sha1_context* ctx) {
 	/*
 	 * Saving message body
 	 */
-	int guard = 0;
 	do {
 		char curr = read_char(netin);
-		sha1_hmac_update(ctx, (unsigned char*) &curr, 1);
 		
-		if (curr == '\n') {
-			if (guard == 1) {
-				break;
-			} else {
-				guard = 1;
-				continue;
-			}
-		} else {
-			guard = 0;
-			
-			if (curr == '\\') {
-				char next = read_char(netin);
-				if (next == 'n') {
-					sha1_hmac_update(ctx, (unsigned char*) &next, 1);
-					wresult += write_char(&bstore, '\n');
-				} else  {
-					sha1_hmac_update(ctx, (unsigned char*) &next, 1);
-					wresult += write_char(&bstore, next);
-				}
-			} else {
-				wresult += write_char(&bstore, curr);				
-			}
+		if (curr == 3) {
+			break;
 		}
 		
-		if (netin->valid < 0 || wresult < 0) {
+		sha1_hmac_update(ctx, (unsigned char*) &curr, 1);
+		wresult += write_char(&bstore, curr);
+		
+		if (wresult < 0) {
 			return -1;
 		}
 	} while (netin->valid > 0);
@@ -342,8 +327,9 @@ int handle_read(request* req, bfr_ou* netou) {
 	/*
 	 * Listing directory
 	 */
-	char dir[strlen(lstore)+MAX_FLEN+1];
+	char dir[strlen(lstore)+1+MAX_FLEN];
 	strcpy(dir, lstore);
+	strcat(dir, "/");
 	strcat(dir, req->from);
 	struct dirent** list;
 	int n = scandir(dir, &list, filter_dirs, alphasort);
@@ -364,7 +350,7 @@ int handle_read(request* req, bfr_ou* netou) {
 			 * Opening file
 			 */
 			bfr_in bmsg = {};
-			char file[strlen(lstore)+MAX_FLEN+1+20+1];
+			char file[strlen(lstore)+1+MAX_FLEN+1+20];
 			strcpy(file, dir);
 			strcat(file, "/");
 			strcat(file, list[n]->d_name);
@@ -406,7 +392,7 @@ int handle_read(request* req, bfr_ou* netou) {
 			sscanf(field, "%ld", &time_l);
 			struct tm time_m;
 			gmtime_r(&time_l, &time_m);
-			strftime(field, sizeof(field), "%Y-%m-%d %H:%M:%S %z", &time_m);
+			strftime(field, sizeof(field), "%Y-%m-%d %H:%M:%S (UTC)", &time_m);
 			
 			/*
 			 * Printing date
@@ -460,8 +446,9 @@ int handle_delete(request* req, bfr_ou* netou) {
 	/*
 	 * Listing directory and removing files
 	 */
-	char dir[strlen(lstore)+MAX_FLEN+1];
+	char dir[strlen(lstore)+1+MAX_FLEN];
 	strcpy(dir, lstore);
+	strcat(dir, "/");
 	strcat(dir, req->from);
 	struct dirent** list;
 	int n = scandir(dir, &list, filter_dirs, alphasort);
@@ -478,7 +465,7 @@ int handle_delete(request* req, bfr_ou* netou) {
 		}
 	} else {
 		while (n--) {
-			char file[strlen(lstore)+MAX_FLEN+1+20+1];
+			char file[strlen(lstore)+1+MAX_FLEN+1+20];
 			strcpy(file, dir);
 			strcat(file, "/");
 			strcat(file, list[n]->d_name);

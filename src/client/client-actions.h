@@ -111,13 +111,7 @@ void perform_send(user* usr, request* req, int sock) {
 			}
 		}
 		
-		if (c != '\n') {
-			body[body_index++] = c;
-		} else {
-			body[body_index++] = '\\';
-			body[body_index++] = 'n';
-			body[body_index++] = '\n';
-		}
+		body[body_index++] = c;
 	}
 	
 	/*
@@ -141,7 +135,6 @@ void perform_send(user* usr, request* req, int sock) {
 	 * Computing HMAC
 	 */
 	sha1_hmac_update(&ctx, (unsigned char*) body, body_index);
-	sha1_hmac_update(&ctx, (unsigned char*) "\n\n", 2);
 	unsigned char raw[SHA1_RAW_LEN];
 	sha1_hmac_finish(&ctx, raw);
 	sha1_to_hex(raw, req->hmac);
@@ -176,8 +169,7 @@ void perform_send(user* usr, request* req, int sock) {
 	write_str(&netou, req->object);
 	write_char(&netou, '\n');
 	write_array(&netou, body, body_index);
-	write_char(&netou, '\n');
-	write_char(&netou, '\n');
+	write_char(&netou, 3);
 	flush_buffer(&netou);
 	
 	/*
@@ -233,7 +225,7 @@ void perform_other(user* usr, request* req, int sock) {
 	write_char(&netou, '\n');
 	write_str(&netou, req->from);
 	write_str(&netou, trailing);
-	write_char(&netou, '\n');
+	write_char(&netou, 3);
 	flush_buffer(&netou);
 	
 	/*

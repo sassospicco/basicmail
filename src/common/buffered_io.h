@@ -102,7 +102,6 @@ int read_line(bfr_in* from, char* to, int to_size) {
 }
 
 int consume_garbage(bfr_in* from) {
-	int guard = 1;
 	int counter = 0;
 	
 	do {
@@ -113,14 +112,8 @@ int consume_garbage(bfr_in* from) {
 			return -1;
 		}
 		
-		if (curr == '\n') {
-			if (guard == 1) {
-				return counter;
-			} else {
-				guard = 1;
-			}
-		} else {
-			guard = 0;
+		if (curr == 3) {
+			return counter;
 		}
 	} while (from->valid > 0);
 	
@@ -143,9 +136,6 @@ int write_char(bfr_ou* bfr, char curr) {
 			if (written < 0) {
 				return -1;
 			} else {
-#ifdef DEBUG
-			printf("Written %d\n", written);
-#endif
 				offset = offset + written;
 			}
 		}
@@ -194,9 +184,6 @@ int flush_buffer(bfr_ou* bfr) {
 		if (written < 0) {
 			return -1;
 		} else {
-#ifdef DEBUG
-			printf("Written %d\n", written);
-#endif
 			offset = offset + written;
 		}
 	}
