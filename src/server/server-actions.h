@@ -90,16 +90,19 @@ void* handle_connection(void* sock_ptr) {
 		 * Finding user
 		 */
 		int i;
-		user from;
+		user* from;
 		for (i = 0; i < users_len; i++) {
 			if (strcmp(users[i].name, req.from) == 0) {
 				break;
 			}
 		}
 		if (i < users_len) {
-			from = users[i];
+			from = &users[i];
 		} else {
 			write_str_d(&netou, "Unknown user.\n");
+#ifdef DEBUG
+	printf("Connection closed.\n");
+#endif
 			return NULL;
 		}
 		
@@ -107,7 +110,7 @@ void* handle_connection(void* sock_ptr) {
 		 * Checking HMAC (header only)
 		 */
 		sha1_context ctx;
-		sha1_hmac_starts(&ctx, (unsigned char*) from.password, strlen(from.password));
+		sha1_hmac_starts(&ctx, (unsigned char*) from->password, strlen(from->password));
 		sha1_hmac_update(&ctx, (unsigned char*) req.command, strlen(req.command));
 		sha1_hmac_update(&ctx, (unsigned char*) "\n", 1);
 		sha1_hmac_update(&ctx, (unsigned char*) req.from, strlen(req.from));
@@ -116,7 +119,11 @@ void* handle_connection(void* sock_ptr) {
 		sha1_hmac_update(&ctx, (unsigned char*) "\n", 1);
 		sha1_hmac_update(&ctx, (unsigned char*) req.object, strlen(req.object));
 		sha1_hmac_update(&ctx, (unsigned char*) "\n", 1);
-		if (strcmp(req.command, "READ") == 0 || strcmp(req.command, "DELETE") == 0) {
+		if (
+				strcmp(req.command, "READ") == 0 ||
+				strcmp(req.command, "DELETE") == 0 ||
+				strcmp(req.command, "AUTH") == 0
+		) {
 			consume_garbage(&netin);
 			unsigned char raw[SHA1_RAW_LEN];
 			char hex[SHA1_HEX_LEN+1];
@@ -126,6 +133,7 @@ void* handle_connection(void* sock_ptr) {
 				write_str_d(&netou, "Authentication failed.\n");
 #ifdef DEBUG
 				printf("Expected HMAC: %s\n", hex);
+				printf("Connection closed.\n");
 #endif
 				return NULL;
 			}
@@ -177,6 +185,9 @@ void* handle_connection(void* sock_ptr) {
 			printf("User %s releasing write lock\n", req.from);
 #endif
 			write_unlock();
+		} else if (strcmp(req.command, "AUTH") == 0) {
+			write_str_c(&netou, "");
+			continue;
 		} else if (strcmp(req.command, "LICENSE") == 0) {
 			handling = handle_license(&req, &netou);
 		} else {

@@ -40,6 +40,21 @@ void client(struct sockaddr_in* server) {
 	char c;
 	
 	/*
+	 * Connecting to server
+	 */
+	int sock = establish_connection(server);
+
+	if (sock < 1) {
+		if (sock == -2) {
+			printf("No response from server.\n");
+		} else {
+			printf("Unable to open a network connection.\n");
+		}
+		
+		exit(EXIT_FAILURE);
+	}
+	
+	/*
 	 * Asking for username
 	 */
 	print_console();
@@ -61,26 +76,16 @@ void client(struct sockaddr_in* server) {
 	} while (c != EOF && c != '\n' );
 	clearerr(stdin);
 	
-	/*
-	 * Connecting to server
-	 */
-	int sock = establish_connection(server);
-
-	if (sock < 1) {
-		if (sock == -2) {
-			printf("No response from server.\n");
-		} else {
-			printf("Unable to open a network connection.\n");
-		}
-		
-		exit(EXIT_FAILURE);
-	}
+	request req;
+	strcpy(req.from, usr.name);
+	strcpy(req.command, "AUTH");
+	perform_other(&usr, &req, sock);
 	
 	/*
 	 * Action loop
 	 */
 	while (1) {
-		request req;
+		memset(&req, 0, sizeof(req));
 		strcpy(req.from, usr.name);
 		
 		print_console();
@@ -106,10 +111,10 @@ void client(struct sockaddr_in* server) {
 				perform_send(&usr, &req, sock);
 			} else if (strcmp(req.command, "read") == 0) {
 				strcpy(req.command, "READ");
-				perform_read_or_delete(&usr, &req, sock);
+				perform_other(&usr, &req, sock);
 			} else if (strcmp(req.command, "delete") == 0) {
 				strcpy(req.command, "DELETE");
-				perform_read_or_delete(&usr, &req, sock);
+				perform_other(&usr, &req, sock);
 			}
 		} else if (strcmp(req.command, "quit") == 0 || strcmp(req.command, "exit") == 0) {
 			exit(EXIT_SUCCESS);

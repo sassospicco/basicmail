@@ -183,12 +183,17 @@ void perform_send(user* usr, request* req, int sock) {
 	/*
 	 * Showing server response in STDOUT
 	 */
-	pipe_buffers(&netin, &stdou);
+	int r = pipe_buffers(&netin, &stdou);
+	if (r == 0) {
+		printf("Server closed connection.\n");
+		close(netin.filedes);
+		exit(EXIT_SUCCESS);
+	}
 	
 	free(body);
 }
 
-void perform_read_or_delete(user* usr, request* req, int sock) {
+void perform_other(user* usr, request* req, int sock) {
 	/*
 	 * Computing HMAC
 	 */
@@ -237,6 +242,7 @@ void perform_read_or_delete(user* usr, request* req, int sock) {
 	int r = pipe_buffers(&netin, &stdou);
 	if (r == 0) {
 		printf("Server closed connection.\n");
+		close(netin.filedes);
 		exit(EXIT_SUCCESS);
 	}
 }

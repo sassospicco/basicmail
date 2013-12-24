@@ -30,7 +30,7 @@
 typedef struct {
 	char version[12];
 	char hmac[41];
-	char command[7];
+	char command[8];
 	char from[MAX_FLEN+1];
 	char to[MAX_FLEN+1];
 	char object[MAX_OLEN+1];

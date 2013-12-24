@@ -220,7 +220,7 @@ int pipe_buffers(bfr_in* from, bfr_ou* to) {
 			return 0;
 		} else if (curr == 0 || curr == 3) {
 			flush_buffer(to);
-			return counter;
+			return ++counter;
 		} else {
 			write_char(to, curr);
 			counter++;
