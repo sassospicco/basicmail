@@ -19,6 +19,8 @@ Configuration:
 	A little bit of configuration is required, but server-side only.
 	Namely, you need to create ~/.basicmail/cfg/users file and populate it with your users' names and passwords.
 	The users file is in tab-separated-values format with only two columns: username and password.
+	Valid usernames characters are in the class [0-9a-z]; valid password characters are in the class
+	[0-9A-Za-z ].
 	A limit is enforced: each field must be up to 20 characters long; otherwise, the offensing line will not
 	be parsed correctly (the fields may be truncated or the line may be skipped altogether), but other lines
 	will not be affected.

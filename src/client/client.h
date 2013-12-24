@@ -35,8 +35,7 @@
 
 void client(struct sockaddr_in* server) {
 	user usr = {};
-	char template[10];
-	snprintf(template, sizeof(template), "%%""%d""s", MAX_FLEN);
+	char template[20];
 	char c;
 	
 	/*
@@ -59,6 +58,7 @@ void client(struct sockaddr_in* server) {
 	 */
 	print_console();
 	printf("Type username: ");
+	snprintf(template, sizeof(template), "%%""%d""[0-9a-z]s", MAX_FLEN);
 	scanf(template, usr.name);
 	do {
 		c = getchar();
@@ -70,6 +70,7 @@ void client(struct sockaddr_in* server) {
 	 */
 	print_console();
 	printf("Type password: ");
+	snprintf(template, sizeof(template), "%%""%d""[0-9A-Za-z ]s", MAX_FLEN);
 	scanf(template, usr.password);
 	do {
 		c = getchar();
