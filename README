@@ -1,17 +1,17 @@
-BasicMail 0.1, a simple message exchange suite.
+BasicMail 1.0, a simple message exchange suite.
 
-Usage: basicmail <server|client> [OPTIONS]
+Usage: basicmail <server|client|help> [OPTIONS]
 
 Options:
 
 	Server:
-		-p,	Listening port, default is 7575
-	
+		-p,	Listening port, default is 7474
+
 	Client:
 		-s,	Server IP address, default is 127.0.0.1
 		-h,	Server hostname, e.g. example.com
-		-p, Server port, default is 7575
-		
+		-p,	Server port, default is 7474
+	
 		-s and -h parameters are obviously conflicting, last one will take precedence.
 
 Configuration:

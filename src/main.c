@@ -29,7 +29,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define VERSION "0.1"
+#define VERSION "1.0"
 
 void welcome();
 void usage();

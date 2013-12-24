@@ -190,6 +190,9 @@ void* handle_connection(void* sock_ptr) {
 #endif
 			write_unlock();
 		} else if (strcmp(req.command, "AUTH") == 0) {
+#ifdef DEBUG
+			printf("User %s logged in.\n", req.from);
+#endif
 			write_str_c(&netou, "");
 			continue;
 		} else if (strcmp(req.command, "LICENSE") == 0) {
