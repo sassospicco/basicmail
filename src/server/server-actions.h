@@ -256,9 +256,9 @@ int handle_send(request* req, bfr_in* netin, bfr_ou* netou, sha1_context* ctx) {
 	bstore.typedes = TYPEDES_BLOCK;
 	
 	if (bstore.filedes < 0 && errno == ENOENT) {
-		file[strlen(lstore)+strlen(req->to)] = '\0';
+		file[strlen(lstore)+1+strlen(req->to)] = '\0';
 		mkdir(file, S_IRWXU | S_IRGRP);
-		file[strlen(lstore)+strlen(req->to)] = '/';
+		file[strlen(lstore)+1+strlen(req->to)] = '/';
 		bstore.filedes = open(file, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP);
 	}
 	
