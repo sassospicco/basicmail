@@ -82,7 +82,7 @@ void* handle_connection(void* sock_ptr) {
 		read_line(&netin, req.object, sizeof(req.object));
 		
 		/*
-		 * Checking header
+		 * Checking version
 		 */
 		if (strcmp(req.version, "basicmail 1") != 0) {
 			write_str_c(&netou, "Bad request.\n");
@@ -493,6 +493,9 @@ int handle_license(request* req, bfr_ou* netou) {
 	return 0;
 }
 
+/**
+ * A simple filter, excluding "current directory" and "parent directory" items
+ */
 int filter_dirs(const struct dirent* item) {
 	if (
 		strcmp(item->d_name, ".") == 0 ||

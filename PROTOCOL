@@ -1,0 +1,60 @@
+Protocol basic:
+	
+	Basicmail is a client-server application.
+	
+	Requests are sent by clients only to a server listening on a customizable
+	port, default is 7474. Transport protocol is TCP.
+	
+	The protocol is ideally stateless: since authentication data are sent in
+	each and every request, an handshake is not required. However, current
+	implementation keeps TCP connection alive and sends a dummy AUTH request
+	to check password as soon as possible.
+	
+Request:
+	
+	A request has the following structure:
+	
+	basicmail <v>\n
+	<HMAC>\n
+	<command>\n
+	<user>\n
+	[recipient]\n
+	[object]\n
+	[body]
+	<guard>
+	
+	<> are required fields
+	[] are optional fields
+	
+	* V is protocol version, currently "1".
+	* HMAC is employed to authenticate and verify the request. Details below.
+	* command is one of the following:
+		* "AUTH", a noop request with the sole purpos of checking HMAC;
+		* "DELETE", deletes all messages from user's inbox;
+		* "LICENSE", prints Basicmail license;
+		* "READ", prints all messages in user's inbox;
+		* "SEND", sends a new message;
+	* user is the requesting user.
+	* recipient is the message recipient in case of SEND command, "null"
+	  otherwise.
+	* object is the message object in case of SEND command, "null" otherwise.
+	* body is the message body in  case of SEND command, is empty otherwise.
+	* guard is one of 0x3 or 0x4 characters.
+	
+	The HMAC message is a subset of request, starting from command and until the
+	guard (not included) in case of SEND command, until the newline following
+	object (included) otherwise.
+	
+	The HMAC key is user's password.
+	
+	The guard is 0x3 if another request is expected, 0x4 if TCP connection
+	closing is imminent.
+	
+Response:
+	
+	Responses are not structured and are passed to stdout without parsing.
+	
+	However, they are separated by guards (0x3 or 0x4) with the same meaning
+	as previously stated.
+	
+	A successful AUTH request's body is empty.

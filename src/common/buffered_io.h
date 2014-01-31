@@ -26,10 +26,21 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+/*
+ * Length of buffer
+ */
 #define BFR_LEN 1024
 #define TYPEDES_BLOCK 0
 #define TYPEDES_STREAM 1
-#define BFR_FLUSH 1
+
+/**
+ * The following struct is passed to each of the "read" functions defined here.
+ * It represents an I/O buffer, hosting the buffer itself, the file descriptor
+ * value and two key fields:
+ * valid is -1 if the last operation failed, otherwise it holds the number of
+ * valid, readable bytes in the buffer;
+ * index is the offset at which the next byte will be read.
+ */
 
 typedef struct {
 	int filedes;
@@ -39,6 +50,12 @@ typedef struct {
 	int index;
 } bfr_in;
 
+/**
+ * The following struct is passed to each of the "write" functions defined here.
+ * It represents an I/O buffer, hosting the buffer itself, the file descriptor
+ * value and one key field:
+ * index is the offset at which the next byte will be written.
+ */
 typedef struct {
 	int filedes;
 	int typedes;
@@ -55,6 +72,11 @@ int write_str(bfr_ou*, char*);
 int flush_buffer(bfr_ou*);
 int pipe_buffers(bfr_in*, bfr_ou*);
 
+/**
+ * Reading a single char.
+ * This function returns the char directly. An error can be detected checking
+ * the passed struct's "valid" field for -1.
+ */
 char read_char(bfr_in* bfr) {
 	if (bfr->index >= bfr->valid) {
 		bfr->index = 0;
@@ -77,6 +99,14 @@ char read_char(bfr_in* bfr) {
 	return curr;
 }
 
+/**
+ * Reading a line.
+ * The line will be placed in passed array to, of size to_size. If passed array
+ * is too short, the line will be truncated. Either case, a null char is duly
+ * appended.
+ * Returns -1 in case of error, the length of line (excluding null char)
+ * otherwise.
+ */
 int read_line(bfr_in* from, char* to, int to_size) {
 	int index = 0;
 	
@@ -101,6 +131,12 @@ int read_line(bfr_in* from, char* to, int to_size) {
 	return index;
 }
 
+/**
+ * Skipping to next message.
+ * This function will read and discard characters until a 0x3 guard char is
+ * found.
+ * Returns -1 in case of error, the length of discarded segment otherwise.
+ */
 int consume_garbage(bfr_in* from) {
 	int counter = 0;
 	
@@ -120,6 +156,11 @@ int consume_garbage(bfr_in* from) {
 	return counter;
 }
 
+/**
+ * Writing a single byte to buffer.
+ * A single byte is written, but the buffer itself is kept and not flushed.
+ * Returns -1 in case of error, 0 otherwise.
+ */
 int write_char(bfr_ou* bfr, char curr) {
 	if (bfr->index >= BFR_LEN) {
 		int offset = 0;
@@ -149,6 +190,12 @@ int write_char(bfr_ou* bfr, char curr) {
 	return 0;
 }
 
+/**
+ * Writing an array of bytes to buffer.
+ * Handy shortcut to write an array of arbitrary size. It calls write_char for
+ * every char in passed array. Size must be provided.
+ * Returns -1 in case of error, 0 otherwise.
+ */
 int write_array(bfr_ou* bfr, char* from, int from_size) {
 	int i;
 	for (i = 0; i < from_size; i++) {
@@ -160,16 +207,32 @@ int write_array(bfr_ou* bfr, char* from, int from_size) {
 	return 0;
 }
 
+/**
+ * Writing a null-terminated string to buffer.
+ * Handy shortcut to write a string of arbitrary size. It calls write_char for
+ * every char in passed string. Size is detected with strlen.
+ * Returns -1 in case of error, 0 otherwise.
+ */
 int write_str(bfr_ou* bfr, char* from) {
 	return write_array(bfr, from, strlen(from));
 }
 
+/**
+ * Writing a null-terminated string and a 0x3 to file.
+ * Handy shortcut to write a string of arbitrary size, send a 0x3 guard char
+ * (separating messages) and flush buffer.
+ */
 void write_str_c(bfr_ou* bfr, char* from) {
 	write_array(bfr, from, strlen(from));
 	write_char(bfr, 3);
 	flush_buffer(bfr);
 }
 
+/**
+ * Writing a null-terminated string and a 0x4 to file.
+ * Handy shortcut to write a string of arbitrary size, send a 0x4 guard char
+ * (closing connection), flush buffer and close file.
+ */
 void write_str_d(bfr_ou* bfr, char* from) {
 	write_array(bfr, from, strlen(from));
 	write_char(bfr, 4);
@@ -177,6 +240,10 @@ void write_str_d(bfr_ou* bfr, char* from) {
 	close(bfr->filedes);
 }
 
+/**
+ * Flushing buffer, writing its content to file.
+ * Returns -1 in case of error, 0 otherwise.
+ */
 int flush_buffer(bfr_ou* bfr) {
 	int offset = 0;
 	while (offset < bfr->index) {

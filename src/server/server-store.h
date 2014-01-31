@@ -24,7 +24,11 @@
 
 #include <string.h>
 
-char lstore[sizeof(home)+18];
+/**
+ * Message storage folder
+ * "/store" 6
+ */
+char lstore[sizeof(home)+6];
 
 void init_lstore() {
 	strcpy(lstore, home);

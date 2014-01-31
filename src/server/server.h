@@ -37,6 +37,10 @@ pthread_t tid;
 #include "server-network.h"
 #include "server-actions.h"
 
+/**
+ * server function enstablishes a listening socket on passed port and spawns a
+ * new thread for every incoming connection
+ */
 void server(unsigned int port) {
 	load_users();
 	init_lstore();

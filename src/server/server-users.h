@@ -145,6 +145,9 @@ void load_users() {
 		exit(EXIT_FAILURE);
 	}
 
+	/*
+	 * Saving size in global variable for future use
+	 */
 	users_len = u;
 }
 

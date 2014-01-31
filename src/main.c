@@ -36,12 +36,22 @@ void usage();
 void help();
 void copyright();
 
-char home[256+18];
+/**
+ * $HOME env
+ * "/home/" 6
+ * username, up to 256
+ * "/.basicmail" 11
+ * \0 1
+ */
+char home[6+256+11+1];
 
 #include "./common/network.h"
 #include "./server/server.h"
 #include "./client/client.h"
 
+/**
+ * Main function
+ */
 int main(int argc, char *argv[]) {
 	signal(SIGPIPE, SIG_IGN);
 	
@@ -144,16 +154,25 @@ int main(int argc, char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
+/**
+ * Welcome is printed in normal usage
+ */
 void welcome() {
 	printf("BasicMail %s, a simple message exchange suite.\n", VERSION);
 	printf("Run with \'help\' action for usage, license and warranty terms.\n");
 }
 
+/**
+ * Usage is printed with wrong command line arguments
+ */
 void usage() {
 	printf("BasicMail %s, a simple message exchange suite.\n", VERSION);
 	printf("\tUsage: basicmail <server|client|help> [OPTIONS]\n");
 }
 
+/**
+ * Help is printed with help command, --help switch or -h switch
+ */
 void help() {
 	usage();
 	printf("\n");
@@ -169,6 +188,9 @@ void help() {
 	copyright();
 }
 
+/**
+ * Copyright is appended to help
+ */
 void copyright() {
 	printf("Copyright (C) 2013, Stefano Tribioli\n");
 	printf("BasicMail is free software: you can redistribute it and/or modify it under the terms of the GNU Affero Public License.\n");
