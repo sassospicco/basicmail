@@ -84,7 +84,7 @@ int read_line(bfr_in* from, char* to, int to_size) {
 		char curr = read_char(from);
 		
 		if (from->valid < 0) {
-			return from->valid;
+			return -1;
 		}
 		
 		if (curr == '\n') {
@@ -193,29 +193,29 @@ int flush_buffer(bfr_ou* bfr) {
 	return 0;
 }
 
+/**
+ * Copying data from one buffer to another until a guard is found.
+ * Valid guards are EOF condition; \0x0, \0x3 and \0x4 chars; error condition.
+ * Returns -1 in case of (reading) error, 0 if EOF is reached, guard value if
+ * a guard character is found. 
+ */
 int pipe_buffers(bfr_in* from, bfr_ou* to) {
-	int counter = 0;
-	
 	do {
 		char curr = read_char(from);
 
-		if (from->valid <= 0) {
+		if (from->valid < 0) {
 			flush_buffer(to);
-			return from->valid;
-		} else if (curr == 4) {
+			return -1;
+		} else if (curr == 0 || curr == 3 || curr == 4) {
 			flush_buffer(to);
-			return 0;
-		} else if (curr == 0 || curr == 3) {
-			flush_buffer(to);
-			return ++counter;
+			return curr;
 		} else {
 			write_char(to, curr);
-			counter++;
 		}
 	} while (from->valid > 0);
 	
 	flush_buffer(to);
-	return counter;
+	return 0;
 }
 
 #endif /* BUFFERED_IO_H_ */

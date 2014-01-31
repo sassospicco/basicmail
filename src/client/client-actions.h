@@ -232,7 +232,7 @@ void perform_other(user* usr, request* req, int sock) {
 	 * Showing server response in STDOUT
 	 */
 	int r = pipe_buffers(&netin, &stdou);
-	if (r == 0) {
+	if (r == 0 || r == 4) {
 		printf("Server closed connection.\n");
 		close(netin.filedes);
 		exit(EXIT_SUCCESS);
